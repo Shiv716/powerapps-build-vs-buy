@@ -253,6 +253,7 @@ type CaseState = {
   riskScore: number;
   riskBand: string;
   status: KycStatus;
+  rejectionCategory: string | null;
   assigneeId: string | null;
   submittedAt: string;
   decidedAt: string | null;
@@ -274,6 +275,7 @@ async function seedKycCases(userIds: Map<string, string>) {
       riskScore: seed.riskScore,
       riskBand: riskBandFor(seed.riskScore),
       status: "pending",
+      rejectionCategory: null,
       assigneeId: null,
       submittedAt: submittedAt.toISOString(),
       decidedAt: null,
@@ -294,12 +296,12 @@ async function seedKycCases(userIds: Map<string, string>) {
         state = {
           ...state,
           status: event.kind === "approve" ? "approved" : "rejected",
+          rejectionCategory: event.kind === "reject" ? event.category : null,
           decidedAt: at.toISOString(),
           decidedById: actorId,
         };
       }
-      const category = event.kind === "reject" ? `[${event.category}] ` : "";
-      const reason = event.kind === "claim" ? null : `${category}${event.reason}`;
+      const reason = event.kind === "claim" ? null : event.reason;
       auditRows.push({
         actorId,
         actorEmail: event.actor,
@@ -323,6 +325,7 @@ async function seedKycCases(userIds: Map<string, string>) {
         riskScore: seed.riskScore,
         riskBand: riskBandFor(seed.riskScore),
         status: state.status,
+        rejectionCategory: state.rejectionCategory,
         assigneeId: state.assigneeId,
         submittedAt,
         decidedAt: state.decidedAt ? new Date(state.decidedAt) : null,

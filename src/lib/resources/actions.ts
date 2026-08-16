@@ -41,13 +41,12 @@ export async function executeResourceAction(
     }
   }
 
-  const auditReason = [category && `[${category}]`, reason?.trim()].filter(Boolean).join(" ");
   return withAudit<Row>(
     actor,
     {
       action: `${resource.slug}.${action.key}`,
       entityType: resource.model,
-      reason: auditReason || null,
+      reason: reason?.trim() || null,
     },
     async (tx) => {
       const before = await getRow(resource, user, rowId, tx, { include: false });

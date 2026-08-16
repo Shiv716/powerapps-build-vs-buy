@@ -48,7 +48,7 @@ function DocumentsSection({ documents }: { documents: CaseDocument[] }) {
 }
 
 /** Scalar fields worth surfacing when diffing audit before/after snapshots. */
-const TRACKED_FIELDS = ["status", "assigneeId", "decidedById", "decidedAt"] as const;
+const TRACKED_FIELDS = ["status", "assigneeId", "decidedById", "decidedAt", "rejectionCategory"] as const;
 
 function changedFields(before: unknown, after: unknown): { field: string; from: string; to: string }[] {
   if (!before || !after || typeof before !== "object" || typeof after !== "object") return [];
@@ -103,6 +103,22 @@ async function HistorySection({ caseId }: { caseId: string }) {
 
 function decidable(row: Row): boolean {
   return ["pending", "in_review", "escalated"].includes(String(row.status));
+}
+
+// Maker–checker: a decision needs two people — a maker who claimed the case
+// and a different checker who decides it. An unclaimed case has no maker, so
+// it cannot be decided. Enforced server-side; hiding the button is not the control.
+function assertMakerChecker(ctx: ActionContext): void {
+  if (ctx.row.assigneeId == null) {
+    throw new ValidationError(
+      "Maker–checker: a case must be claimed before it can be decided.",
+    );
+  }
+  if (ctx.row.assigneeId === ctx.user.id) {
+    throw new ValidationError(
+      "Maker–checker: the user who claimed a case cannot decide it.",
+    );
+  }
 }
 
 async function transition(
@@ -181,6 +197,7 @@ export const kycCases: ResourceConfig = {
     { key: "riskScore", label: "Risk score" },
     { key: "riskBand", label: "Risk band", kind: "badge" },
     { key: "status", label: "Status", kind: "badge" },
+    { key: "rejectionCategory", label: "Rejection category" },
     { key: "assignee.name", label: "Assignee" },
     { key: "submittedAt", label: "Submitted", kind: "date" },
     { key: "decidedAt", label: "Decided", kind: "date" },
@@ -214,12 +231,7 @@ export const kycCases: ResourceConfig = {
       requiresReason: true,
       visible: decidable,
       execute: (ctx) => {
-        // Maker–checker: enforced here, server-side; hiding the button is not the control.
-        if (ctx.row.assigneeId === ctx.user.id) {
-          throw new ValidationError(
-            "Maker–checker: the user who claimed a case cannot approve it.",
-          );
-        }
+        assertMakerChecker(ctx);
         return transition(ctx, {
           status: "approved",
           decidedAt: new Date(),
@@ -243,12 +255,15 @@ export const kycCases: ResourceConfig = {
         ],
       },
       visible: decidable,
-      execute: (ctx) =>
-        transition(ctx, {
+      execute: (ctx) => {
+        assertMakerChecker(ctx);
+        return transition(ctx, {
           status: "rejected",
+          rejectionCategory: ctx.category,
           decidedAt: new Date(),
           decidedById: ctx.user.id,
-        }),
+        });
+      },
     },
     {
       key: "escalate",

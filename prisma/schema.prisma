@@ -47,6 +47,7 @@ model KycCase {
   /// Derived from riskScore at write time: 0–39 low, 40–69 medium, 70–100 high.
   riskBand       KycRiskBand
   status         KycStatus     @default(pending)
+  rejectionCategory String?
   assigneeId     String?
   assignee       User?         @relation("KycCaseAssignee", fields: [assigneeId], references: [id])
   submittedAt    DateTime      @default(now())
