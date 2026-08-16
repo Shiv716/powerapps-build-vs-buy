@@ -23,7 +23,7 @@ export function cellValue(row: Row, key: string): unknown {
 
 export function formatCell(value: unknown, kind?: "text" | "badge" | "date" | "json"): ReactNode {
   if (value === null || value === undefined || value === "") {
-    return <span className="text-slate-400">—</span>;
+    return <span className="text-slate-600">—</span>;
   }
   if (kind === "date" || value instanceof Date) {
     const date = value instanceof Date ? value : new Date(String(value));
@@ -46,7 +46,7 @@ export function formatCell(value: unknown, kind?: "text" | "badge" | "date" | "j
   }
   if (kind === "json" || typeof value === "object") {
     return (
-      <pre className="max-w-md overflow-x-auto rounded bg-slate-50 p-2 text-xs">
+      <pre className="max-w-md overflow-x-auto rounded bg-slate-50 p-2 text-xs text-slate-900">
         {JSON.stringify(value, null, 2)}
       </pre>
     );

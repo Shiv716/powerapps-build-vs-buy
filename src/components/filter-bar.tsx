@@ -16,7 +16,7 @@ export function FilterBar({ filters, values, basePath }: FilterBarProps) {
             {(["From", "To"] as const).map((suffix) => (
               <label
                 key={suffix}
-                className="flex flex-col gap-1 text-xs font-medium text-slate-500"
+                className="flex flex-col gap-1 text-xs font-medium text-slate-600"
               >
                 {filter.label} {suffix.toLowerCase()}
                 <input
@@ -29,7 +29,7 @@ export function FilterBar({ filters, values, basePath }: FilterBarProps) {
             ))}
           </div>
         ) : (
-        <label key={filter.key} className="flex flex-col gap-1 text-xs font-medium text-slate-500">
+        <label key={filter.key} className="flex flex-col gap-1 text-xs font-medium text-slate-600">
           {filter.label}
           {filter.type === "select" ? (
             <select
@@ -61,7 +61,7 @@ export function FilterBar({ filters, values, basePath }: FilterBarProps) {
       >
         Filter
       </button>
-      <a href={basePath} className="px-2 py-1.5 text-sm text-slate-500 hover:text-slate-900">
+      <a href={basePath} className="px-2 py-1.5 text-sm text-slate-600 hover:text-slate-900">
         Reset
       </a>
     </form>
