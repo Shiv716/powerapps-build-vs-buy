@@ -15,7 +15,7 @@ export function DetailPanel({ fields, row }: DetailPanelProps) {
             {field.label}
           </dt>
           <dd className="mt-1 text-sm text-slate-900">
-            {formatCell(cellValue(row, field.key), field.kind)}
+            {field.render ? field.render(row) : formatCell(cellValue(row, field.key), field.kind)}
           </dd>
         </div>
       ))}

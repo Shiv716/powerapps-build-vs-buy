@@ -11,6 +11,11 @@ const BADGE_STYLES: Record<string, string> = {
   approved: "bg-emerald-100 text-emerald-800",
   rejected: "bg-red-100 text-red-800",
   escalated: "bg-amber-100 text-amber-800",
+  awaiting_second_approval: "bg-purple-100 text-purple-800",
+  duplicate: "bg-slate-100 text-slate-700",
+  fraud: "bg-red-100 text-red-800",
+  service_failure: "bg-amber-100 text-amber-800",
+  goodwill: "bg-blue-100 text-blue-800",
 };
 
 /** Resolves a (possibly dotted) column key against a row, e.g. "assignee.name". */
