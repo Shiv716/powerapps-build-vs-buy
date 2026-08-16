@@ -40,31 +40,61 @@ export function parseListParams(
   const sortDir = single("dir") === "asc" ? "asc" : single("dir") === "desc" ? "desc" : resource.defaultSort.dir;
   const filters: Record<string, string> = {};
   for (const filter of resource.filters) {
+    if (filter.type === "daterange") {
+      for (const key of [`${filter.key}From`, `${filter.key}To`]) {
+        const value = single(key);
+        if (value) filters[key] = value;
+      }
+      continue;
+    }
     const value = single(filter.key);
     if (value) filters[filter.key] = value;
   }
   return { page, sortField, sortDir, filters };
 }
 
-function filterWhere(filters: FilterDef[], values: Record<string, string>): Row {
-  const where: Row = {};
+function parseDay(value: string | undefined): Date | null {
+  if (!value) return null;
+  const day = new Date(value);
+  return Number.isNaN(day.getTime()) ? null : day;
+}
+
+function filterWhere(
+  filters: FilterDef[],
+  values: Record<string, string>,
+  user: SessionUser,
+): Row {
+  const fragments: Row[] = [];
   for (const filter of filters) {
+    if (filter.type === "daterange") {
+      const from = parseDay(values[`${filter.key}From`]);
+      const to = parseDay(values[`${filter.key}To`]);
+      const range: Row = {};
+      if (from) range.gte = from;
+      if (to) {
+        const next = new Date(to);
+        next.setDate(next.getDate() + 1);
+        range.lt = next;
+      }
+      if (from || to) fragments.push({ [filter.key]: range });
+      continue;
+    }
     const value = values[filter.key];
     if (!value) continue;
     if (filter.type === "text") {
-      where[filter.key] = { contains: value, mode: "insensitive" };
+      fragments.push({ [filter.key]: { contains: value, mode: "insensitive" } });
     } else if (filter.type === "select") {
-      where[filter.key] = value;
+      fragments.push(filter.where ? filter.where(value, user) : { [filter.key]: value });
     } else {
-      const day = new Date(value);
-      if (!Number.isNaN(day.getTime())) {
+      const day = parseDay(value);
+      if (day) {
         const next = new Date(day);
         next.setDate(next.getDate() + 1);
-        where[filter.key] = { gte: day, lt: next };
+        fragments.push({ [filter.key]: { gte: day, lt: next } });
       }
     }
   }
-  return where;
+  return { AND: fragments };
 }
 
 /** Combines row-level scope with user filters. Scope applies to every query. */
@@ -79,11 +109,16 @@ export async function listRows(
   params: ListParams,
 ): Promise<{ rows: Row[]; total: number; pageCount: number }> {
   const delegate = delegateFor(resource.model);
-  const where = scopedWhere(resource, user, filterWhere(resource.filters, params.filters));
+  const where = scopedWhere(resource, user, filterWhere(resource.filters, params.filters, user));
+  const orderBy: Row[] = [{ [params.sortField]: params.sortDir }];
+  if (resource.sortTiebreak && resource.sortTiebreak.field !== params.sortField) {
+    orderBy.push({ [resource.sortTiebreak.field]: resource.sortTiebreak.dir });
+  }
   const [rows, total] = await Promise.all([
     delegate.findMany({
       where,
-      orderBy: { [params.sortField]: params.sortDir },
+      include: resource.include,
+      orderBy,
       skip: (params.page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
@@ -97,7 +132,11 @@ export async function getRow(
   user: SessionUser,
   id: string,
   client?: Prisma.TransactionClient,
+  options: { include?: boolean } = {},
 ): Promise<Row | null> {
   const delegate = delegateFor(resource.model, client);
-  return delegate.findFirst({ where: scopedWhere(resource, user, { id }) });
+  return delegate.findFirst({
+    where: scopedWhere(resource, user, { id }),
+    include: options.include === false ? undefined : resource.include,
+  });
 }

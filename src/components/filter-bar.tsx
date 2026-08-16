@@ -10,7 +10,25 @@ export function FilterBar({ filters, values, basePath }: FilterBarProps) {
   if (filters.length === 0) return null;
   return (
     <form method="get" action={basePath} className="mb-4 flex flex-wrap items-end gap-3">
-      {filters.map((filter) => (
+      {filters.map((filter) =>
+        filter.type === "daterange" ? (
+          <div key={filter.key} className="flex items-end gap-2">
+            {(["From", "To"] as const).map((suffix) => (
+              <label
+                key={suffix}
+                className="flex flex-col gap-1 text-xs font-medium text-slate-500"
+              >
+                {filter.label} {suffix.toLowerCase()}
+                <input
+                  type="date"
+                  name={`${filter.key}${suffix}`}
+                  defaultValue={values[`${filter.key}${suffix}`] ?? ""}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
+                />
+              </label>
+            ))}
+          </div>
+        ) : (
         <label key={filter.key} className="flex flex-col gap-1 text-xs font-medium text-slate-500">
           {filter.label}
           {filter.type === "select" ? (
@@ -35,7 +53,8 @@ export function FilterBar({ filters, values, basePath }: FilterBarProps) {
             />
           )}
         </label>
-      ))}
+        ),
+      )}
       <button
         type="submit"
         className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"

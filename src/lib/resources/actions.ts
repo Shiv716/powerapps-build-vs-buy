@@ -18,6 +18,7 @@ export async function executeResourceAction(
   user: SessionUser,
   rowId: string,
   reason: string | undefined,
+  category?: string,
 ): Promise<Row> {
   const action = resource.actions.find((a) => a.key === actionKey);
   if (!action) throw new NotFoundError(`Unknown action: ${actionKey}`);
@@ -34,21 +35,27 @@ export async function executeResourceAction(
   if (action.requiresReason && !reason?.trim()) {
     throw new ValidationError("A reason is required for this action.");
   }
+  if (action.category) {
+    if (!category || !action.category.options.some((o) => o.value === category)) {
+      throw new ValidationError(`A ${action.category.label.toLowerCase()} is required for this action.`);
+    }
+  }
 
+  const auditReason = [category && `[${category}]`, reason?.trim()].filter(Boolean).join(" ");
   return withAudit<Row>(
     actor,
     {
       action: `${resource.slug}.${action.key}`,
       entityType: resource.model,
-      reason: reason?.trim() || null,
+      reason: auditReason || null,
     },
     async (tx) => {
-      const before = await getRow(resource, user, rowId, tx);
+      const before = await getRow(resource, user, rowId, tx, { include: false });
       if (!before) throw new NotFoundError("Row not found or out of scope.");
       if (action.visible && !action.visible(before, user)) {
         throw new ValidationError("Action not available for this row.");
       }
-      const after = await action.execute({ tx, user, row: before, reason: reason?.trim() });
+      const after = await action.execute({ tx, user, row: before, reason: reason?.trim(), category });
       return { result: after, entityId: rowId, before, after };
     },
   );

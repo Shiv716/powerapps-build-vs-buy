@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatCell } from "@/components/format";
+import { cellValue, formatCell } from "@/components/format";
 import type { ColumnDef, Row } from "@/lib/resources/types";
 
 type DataTableProps = {
@@ -74,10 +74,10 @@ export function DataTable({
                   <td key={col.key} className="px-4 py-3">
                     {j === 0 && rowHref ? (
                       <Link href={rowHref(row)} className="font-medium text-blue-700 hover:underline">
-                        {formatCell(row[col.key], col.kind)}
+                        {formatCell(cellValue(row, col.key), col.kind)}
                       </Link>
                     ) : (
-                      formatCell(row[col.key], col.kind)
+                      formatCell(cellValue(row, col.key), col.kind)
                     )}
                   </td>
                 ))}
