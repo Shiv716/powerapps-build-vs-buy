@@ -1,6 +1,6 @@
 # Internal Tools Platform — Power Apps replacement prototype
 
-**Loom walkthrough:** _[paste link here]_
+**Loom walkthrough:** _https://www.loom.com/share/1a880a4574c64797aa23cc204b331b22_
 
 A working prototype exploring whether an engineering team can replace a low-code internal-tool
 platform by building in-house with Devin.
