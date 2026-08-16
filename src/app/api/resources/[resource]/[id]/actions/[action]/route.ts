@@ -10,7 +10,10 @@ import {
 } from "@/lib/resources/actions";
 import { getResource } from "@/lib/resources/registry";
 
-const bodySchema = z.object({ reason: z.string().max(2000).optional() });
+const bodySchema = z.object({
+  reason: z.string().max(2000).optional(),
+  category: z.string().max(200).optional(),
+});
 
 type RouteParams = {
   params: { resource: string; id: string; action: string };
@@ -39,6 +42,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       user,
       params.id,
       parsed.data.reason,
+      parsed.data.category,
     );
     return NextResponse.json({ ok: true, row: after });
   } catch (error) {

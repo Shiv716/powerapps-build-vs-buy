@@ -9,6 +9,7 @@ type ActionDialogProps = {
   actionKey: string;
   label: string;
   requiresReason: boolean;
+  category?: { label: string; options: { value: string; label: string }[] };
 };
 
 export function ActionDialog({
@@ -17,10 +18,12 @@ export function ActionDialog({
   actionKey,
   label,
   requiresReason,
+  category,
 }: ActionDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [categoryValue, setCategoryValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +35,10 @@ export function ActionDialog({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason || undefined }),
+        body: JSON.stringify({
+          reason: reason || undefined,
+          category: categoryValue || undefined,
+        }),
       },
     );
     setBusy(false);
@@ -43,6 +49,7 @@ export function ActionDialog({
     }
     setOpen(false);
     setReason("");
+    setCategoryValue("");
     router.refresh();
   }
 
@@ -59,6 +66,23 @@ export function ActionDialog({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h2 className="text-lg font-semibold text-slate-900">{label}</h2>
+            {category && (
+              <label className="mt-4 block text-sm font-medium text-slate-700">
+                {category.label} <span className="text-red-600">*</span>
+                <select
+                  value={categoryValue}
+                  onChange={(e) => setCategoryValue(e.target.value)}
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
+                >
+                  <option value="">Select…</option>
+                  {category.options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             {requiresReason && (
               <label className="mt-4 block text-sm font-medium text-slate-700">
                 Reason <span className="text-red-600">*</span>
@@ -83,7 +107,7 @@ export function ActionDialog({
               <button
                 type="button"
                 onClick={submit}
-                disabled={busy || (requiresReason && !reason.trim())}
+                disabled={busy || (requiresReason && !reason.trim()) || (Boolean(category) && !categoryValue)}
                 className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
               >
                 {busy ? "Working…" : "Confirm"}

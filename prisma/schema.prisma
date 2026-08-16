@@ -8,11 +8,68 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  roles     String[] @default([])
-  createdAt DateTime @default(now())
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  roles        String[]  @default([])
+  createdAt    DateTime  @default(now())
+  kycAssigned  KycCase[] @relation("KycCaseAssignee")
+  kycDecided   KycCase[] @relation("KycCaseDecidedBy")
+}
+
+enum KycStatus {
+  pending
+  in_review
+  approved
+  rejected
+  escalated
+}
+
+enum KycRiskBand {
+  low
+  medium
+  high
+}
+
+enum KycDocumentType {
+  passport
+  driving_licence
+  proof_of_address
+}
+
+model KycCase {
+  id             String        @id @default(cuid())
+  applicantName  String
+  applicantEmail String
+  country        String
+  dateOfBirth    DateTime
+  riskScore      Int
+  /// Derived from riskScore at write time: 0–39 low, 40–69 medium, 70–100 high.
+  riskBand       KycRiskBand
+  status         KycStatus     @default(pending)
+  rejectionCategory String?
+  assigneeId     String?
+  assignee       User?         @relation("KycCaseAssignee", fields: [assigneeId], references: [id])
+  submittedAt    DateTime      @default(now())
+  decidedAt      DateTime?
+  decidedById    String?
+  decidedBy      User?         @relation("KycCaseDecidedBy", fields: [decidedById], references: [id])
+  documents      KycDocument[]
+
+  @@index([status])
+  @@index([assigneeId])
+  @@index([riskScore, submittedAt])
+}
+
+model KycDocument {
+  id         String          @id @default(cuid())
+  caseId     String
+  case       KycCase         @relation(fields: [caseId], references: [id])
+  type       KycDocumentType
+  fileUrl    String
+  uploadedAt DateTime        @default(now())
+
+  @@index([caseId])
 }
 
 model AuditLog {

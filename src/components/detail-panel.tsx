@@ -1,4 +1,4 @@
-import { formatCell } from "@/components/format";
+import { cellValue, formatCell } from "@/components/format";
 import type { DetailFieldDef, Row } from "@/lib/resources/types";
 
 type DetailPanelProps = {
@@ -14,7 +14,9 @@ export function DetailPanel({ fields, row }: DetailPanelProps) {
           <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
             {field.label}
           </dt>
-          <dd className="mt-1 text-sm text-slate-900">{formatCell(row[field.key], field.kind)}</dd>
+          <dd className="mt-1 text-sm text-slate-900">
+            {formatCell(cellValue(row, field.key), field.kind)}
+          </dd>
         </div>
       ))}
     </dl>
