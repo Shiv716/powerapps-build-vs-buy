@@ -50,15 +50,19 @@ export async function auditDenied(
   actor: AuditActor,
   details: { entityType: string; entityId?: string; requiredRoles: string[] },
 ): Promise<void> {
-  await prisma.auditLog.create({
-    data: {
-      actorId: actor.id,
-      actorEmail: actor.email,
-      action: "auth.denied",
-      entityType: details.entityType,
-      entityId: details.entityId ?? "-",
-      after: { requiredRoles: details.requiredRoles },
-      ip: actor.ip ?? null,
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorId: actor.id,
+        actorEmail: actor.email,
+        action: "auth.denied",
+        entityType: details.entityType,
+        entityId: details.entityId ?? "-",
+        after: { requiredRoles: details.requiredRoles },
+        ip: actor.ip ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("auditDenied: failed to write audit row", error);
+  }
 }
