@@ -31,7 +31,7 @@ enforcement, full history reconstructed from audit rows.
 
 ```bash
 pnpm install
-cp .env.example .env      # fill in Entra ID client ID/secret/tenant and DATABASE_URL
+cp .env.example .env      # set DATABASE_URL; Entra ID vars can stay as placeholders in dev
 pnpm prisma migrate dev
 pnpm seed
 pnpm dev
@@ -39,6 +39,18 @@ pnpm dev
 
 Seeded users cover each role (`viewer`, `reviewer`, `approver`, `admin`) so the access-control
 behaviour is demonstrable without a live tenant.
+
+### Development sign-in (no Microsoft tenant needed)
+
+When `NODE_ENV` is not `"production"` (e.g. `pnpm dev`), the sign-in page offers a
+**Development sign-in** section alongside the Entra ID button: a dropdown of the seeded users
+(with their roles) and a passwordless sign-in button. Pick a user and sign in — the session
+carries that user's real id and roles, so RBAC and row scoping behave exactly as they would
+for a real account. Sign out and back in as a different user to switch roles.
+
+The dev provider is only registered when `NODE_ENV !== "production"`; production builds expose
+Entra ID as the only sign-in option. Entra ID (`AUTH_MICROSOFT_ENTRA_ID_*` in `.env`) remains
+the production sign-in path.
 
 ## What is deliberately missing
 
