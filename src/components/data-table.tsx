@@ -36,7 +36,7 @@ export function DataTable({
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
           <tr>
             {columns.map((col) => (
               <th key={col.key} className="px-4 py-3 font-medium">
@@ -60,10 +60,10 @@ export function DataTable({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 text-slate-900">
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-400">
+              <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-600">
                 No rows match.
               </td>
             </tr>
@@ -86,7 +86,7 @@ export function DataTable({
           )}
         </tbody>
       </table>
-      <div className="flex items-center justify-between border-t border-slate-200 px-4 py-2 text-sm text-slate-500">
+      <div className="flex items-center justify-between border-t border-slate-200 px-4 py-2 text-sm text-slate-600">
         <span>
           {total} row{total === 1 ? "" : "s"} · page {page} of {pageCount}
         </span>

@@ -33,11 +33,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
           </nav>
-          <div className="flex items-center gap-3 text-sm text-slate-500">
+          <div className="flex items-center gap-3 text-sm text-slate-600">
             <span>
               {user.email}
               {user.roles.length > 0 && (
-                <span className="ml-2 text-xs text-slate-400">[{user.roles.join(", ")}]</span>
+                <span className="ml-2 text-xs text-slate-600">[{user.roles.join(", ")}]</span>
               )}
             </span>
             <Link href="/api/auth/signout" className="text-slate-600 hover:text-slate-900">
