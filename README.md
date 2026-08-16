@@ -1,4 +1,4 @@
-# Internal Tools Platform — Power Apps replacement prototype
+# Internal Tools Platform: Power Apps replacement prototype
 
 **Loom walkthrough:** _https://www.loom.com/share/1a880a4574c64797aa23cc204b331b22_
 
