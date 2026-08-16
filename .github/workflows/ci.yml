@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm build
+        env:
+          DATABASE_URL: postgresql://app:app@localhost:5432/platform
+          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_SECRET: ci-only-secret
+          AUTH_MICROSOFT_ENTRA_ID_ID: 00000000-0000-0000-0000-000000000000
+          AUTH_MICROSOFT_ENTRA_ID_SECRET: placeholder
+          AUTH_MICROSOFT_ENTRA_ID_TENANT_ID: common

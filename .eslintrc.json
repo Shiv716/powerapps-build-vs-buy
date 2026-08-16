@@ -1,0 +1,22 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "overrides": [
+    {
+      "files": ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+      "excludedFiles": ["src/app/api/auth/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@/lib/db",
+                "message": "Do not use the Prisma client directly in UI or route code. Mutations must go through withAudit() in @/lib/audit; reads go through @/lib/resources/query. (The admin audit view is the one read-only exception, disabled inline.)"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
