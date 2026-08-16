@@ -8,13 +8,16 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String
-  roles        String[]  @default([])
-  createdAt    DateTime  @default(now())
-  kycAssigned  KycCase[] @relation("KycCaseAssignee")
-  kycDecided   KycCase[] @relation("KycCaseDecidedBy")
+  id                    String          @id @default(cuid())
+  email                 String          @unique
+  name                  String
+  roles                 String[]        @default([])
+  createdAt             DateTime        @default(now())
+  kycAssigned           KycCase[]       @relation("KycCaseAssignee")
+  kycDecided            KycCase[]       @relation("KycCaseDecidedBy")
+  refundsRequested      RefundRequest[] @relation("RefundRequestedBy")
+  refundsFirstApproved  RefundRequest[] @relation("RefundFirstApprover")
+  refundsSecondApproved RefundRequest[] @relation("RefundSecondApprover")
 }
 
 enum KycStatus {
@@ -70,6 +73,43 @@ model KycDocument {
   uploadedAt DateTime        @default(now())
 
   @@index([caseId])
+}
+
+enum RefundReason {
+  duplicate
+  fraud
+  service_failure
+  goodwill
+}
+
+enum RefundStatus {
+  pending
+  approved
+  rejected
+  awaiting_second_approval
+}
+
+model RefundRequest {
+  id               String       @id @default(cuid())
+  customerName     String
+  customerEmail    String
+  orderRef         String
+  amount           Decimal      @db.Decimal(12, 2)
+  currency         String       @default("GBP")
+  reason           RefundReason
+  status           RefundStatus @default(pending)
+  requestedById    String
+  requestedBy      User         @relation("RefundRequestedBy", fields: [requestedById], references: [id])
+  requestedAt      DateTime     @default(now())
+  firstApproverId  String?
+  firstApprover    User?        @relation("RefundFirstApprover", fields: [firstApproverId], references: [id])
+  secondApproverId String?
+  secondApprover   User?        @relation("RefundSecondApprover", fields: [secondApproverId], references: [id])
+  decidedAt        DateTime?
+
+  @@index([status])
+  @@index([amount, requestedAt])
+  @@index([requestedAt])
 }
 
 model AuditLog {

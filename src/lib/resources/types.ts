@@ -10,6 +10,8 @@ export type ColumnDef = {
   label: string;
   sortable?: boolean;
   kind?: "text" | "badge" | "date";
+  /** Custom cell renderer for values formatCell cannot handle (e.g. money). */
+  render?: (row: Row) => ReactNode;
 };
 
 export type FilterDef =
@@ -30,7 +32,11 @@ export type DetailFieldDef = {
   key: string;
   label: string;
   kind?: "text" | "badge" | "date" | "json";
+  /** Custom field renderer for values formatCell cannot handle (e.g. money). */
+  render?: (row: Row) => ReactNode;
 };
+
+export type SummaryFigure = { label: string; value: string };
 
 export type ActionContext = {
   tx: Prisma.TransactionClient;
@@ -80,6 +86,11 @@ export type ResourceConfig = {
   scope?: (user: SessionUser) => Row;
   /** Prisma `include` applied to the list and detail queries (not to action snapshots). */
   include?: Row;
+  /**
+   * Summary strip rendered above the list. Computed server-side against the
+   * same row scope the user sees; no client aggregation.
+   */
+  summary?: (user: SessionUser) => Promise<SummaryFigure[]>;
   columns: ColumnDef[];
   filters: FilterDef[];
   detailFields: DetailFieldDef[];

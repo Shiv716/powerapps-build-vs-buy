@@ -1,4 +1,4 @@
-import { KycDocumentType, KycStatus, Prisma, PrismaClient } from "@prisma/client";
+import { KycDocumentType, KycStatus, Prisma, PrismaClient, RefundReason, RefundStatus } from "@prisma/client";
 import { riskBandFor } from "../src/lib/resources/kyc-risk";
 
 const prisma = new PrismaClient();
@@ -244,6 +244,324 @@ function daysAgo(days: number): Date {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
+type RefundEvent = {
+  kind: "approve" | "reject";
+  actor: string;
+  daysAfter: number;
+  reason: string;
+};
+
+type SeedRefund = {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  orderRef: string;
+  amount: string;
+  currency: string;
+  reason: RefundReason;
+  requestedBy: string;
+  requestedDaysAgo: number;
+  events: RefundEvent[];
+};
+
+const refundRequests: SeedRefund[] = [
+  {
+    id: "ref_seed_001",
+    customerName: "Oliver Bennett",
+    customerEmail: "oliver.bennett@example.net",
+    orderRef: "ORD-48213",
+    amount: "1250.00",
+    currency: "GBP",
+    reason: "fraud",
+    requestedBy: "riley.reviewer@example.com",
+    requestedDaysAgo: 5,
+    events: [],
+  },
+  {
+    id: "ref_seed_002",
+    customerName: "Priya Sharma",
+    customerEmail: "priya.sharma@example.net",
+    orderRef: "ORD-48377",
+    amount: "89.99",
+    currency: "GBP",
+    reason: "duplicate",
+    requestedBy: "vera.viewer@example.com",
+    requestedDaysAgo: 2,
+    events: [],
+  },
+  {
+    id: "ref_seed_003",
+    customerName: "Tomasz Kowalski",
+    customerEmail: "tomasz.kowalski@example.net",
+    orderRef: "ORD-47102",
+    amount: "2400.00",
+    currency: "GBP",
+    reason: "service_failure",
+    requestedBy: "riley.reviewer@example.com",
+    requestedDaysAgo: 9,
+    events: [
+      {
+        kind: "approve",
+        actor: "avery.approver@example.com",
+        daysAfter: 1,
+        reason: "Outage on delivery window confirmed by incident INC-2214.",
+      },
+    ],
+  },
+  {
+    id: "ref_seed_004",
+    customerName: "Hannah Murphy",
+    customerEmail: "hannah.murphy@example.net",
+    orderRef: "ORD-46550",
+    amount: "320.00",
+    currency: "GBP",
+    reason: "goodwill",
+    requestedBy: "vera.viewer@example.com",
+    requestedDaysAgo: 12,
+    events: [
+      {
+        kind: "approve",
+        actor: "avery.approver@example.com",
+        daysAfter: 2,
+        reason: "Repeated late deliveries; retention gesture agreed with team lead.",
+      },
+    ],
+  },
+  {
+    id: "ref_seed_005",
+    customerName: "Samuel Adeyemi",
+    customerEmail: "samuel.adeyemi@example.net",
+    orderRef: "ORD-45981",
+    amount: "780.00",
+    currency: "GBP",
+    reason: "duplicate",
+    requestedBy: "riley.reviewer@example.com",
+    requestedDaysAgo: 15,
+    events: [
+      {
+        kind: "approve",
+        actor: "avery.approver@example.com",
+        daysAfter: 1,
+        reason: "Card charged twice for the same basket; PSP reference matches.",
+      },
+      {
+        kind: "approve",
+        actor: "adrian.admin@example.com",
+        daysAfter: 3,
+        reason: "Second approval: duplicate charge verified against settlement report.",
+      },
+    ],
+  },
+  {
+    id: "ref_seed_006",
+    customerName: "Lucia Moreno",
+    customerEmail: "lucia.moreno@example.net",
+    orderRef: "ORD-45213",
+    amount: "45.50",
+    currency: "GBP",
+    reason: "goodwill",
+    requestedBy: "vera.viewer@example.com",
+    requestedDaysAgo: 20,
+    events: [
+      {
+        kind: "reject",
+        actor: "adrian.admin@example.com",
+        daysAfter: 1,
+        reason: "Item was used for three weeks before the complaint; outside policy.",
+      },
+    ],
+  },
+  {
+    id: "ref_seed_007",
+    customerName: "George Whitfield",
+    customerEmail: "george.whitfield@example.net",
+    orderRef: "ORD-48590",
+    amount: "5999.00",
+    currency: "GBP",
+    reason: "fraud",
+    requestedBy: "riley.reviewer@example.com",
+    requestedDaysAgo: 3,
+    events: [],
+  },
+  {
+    id: "ref_seed_008",
+    customerName: "Amelia Clarke",
+    customerEmail: "amelia.clarke@example.net",
+    orderRef: "ORD-48711",
+    amount: "150.00",
+    currency: "GBP",
+    reason: "service_failure",
+    requestedBy: "vera.viewer@example.com",
+    requestedDaysAgo: 1,
+    events: [],
+  },
+  {
+    id: "ref_seed_009",
+    customerName: "Yusuf Demir",
+    customerEmail: "yusuf.demir@example.net",
+    orderRef: "ORD-44102",
+    amount: "1020.00",
+    currency: "GBP",
+    reason: "fraud",
+    requestedBy: "riley.reviewer@example.com",
+    requestedDaysAgo: 25,
+    events: [
+      {
+        kind: "approve",
+        actor: "adrian.admin@example.com",
+        daysAfter: 2,
+        reason: "Chargeback already upheld by issuer; refunding to close the dispute.",
+      },
+      {
+        kind: "approve",
+        actor: "avery.approver@example.com",
+        daysAfter: 5,
+        reason: "Second approval: issuer evidence reviewed, refund justified.",
+      },
+    ],
+  },
+  {
+    id: "ref_seed_010",
+    customerName: "Freya Nilsson",
+    customerEmail: "freya.nilsson@example.net",
+    orderRef: "ORD-47455",
+    amount: "610.00",
+    currency: "GBP",
+    reason: "service_failure",
+    requestedBy: "vera.viewer@example.com",
+    requestedDaysAgo: 7,
+    events: [
+      {
+        kind: "reject",
+        actor: "avery.approver@example.com",
+        daysAfter: 2,
+        reason: "No incident matches the claimed outage; asked CS to gather evidence.",
+      },
+    ],
+  },
+  {
+    id: "ref_seed_011",
+    customerName: "Ethan Walsh",
+    customerEmail: "ethan.walsh@example.net",
+    orderRef: "ORD-48001",
+    amount: "500.00",
+    currency: "GBP",
+    reason: "duplicate",
+    requestedBy: "riley.reviewer@example.com",
+    requestedDaysAgo: 4,
+    events: [
+      {
+        kind: "approve",
+        actor: "adrian.admin@example.com",
+        daysAfter: 1,
+        reason: "Duplicate order confirmed; exactly at the single-approval limit.",
+      },
+    ],
+  },
+  {
+    id: "ref_seed_012",
+    customerName: "Isla MacDonald",
+    customerEmail: "isla.macdonald@example.net",
+    orderRef: "ORD-48620",
+    amount: "510.00",
+    currency: "GBP",
+    reason: "goodwill",
+    requestedBy: "vera.viewer@example.com",
+    requestedDaysAgo: 6,
+    events: [],
+  },
+];
+
+const SINGLE_APPROVAL_LIMIT = 500;
+
+type RefundState = {
+  status: RefundStatus;
+  firstApproverId: string | null;
+  secondApproverId: string | null;
+  decidedAt: string | null;
+};
+
+async function seedRefundRequests(userIds: Map<string, string>) {
+  for (const seed of refundRequests) {
+    const existing = await prisma.refundRequest.findUnique({ where: { id: seed.id } });
+    if (existing) continue;
+
+    const requestedById = userIds.get(seed.requestedBy);
+    if (!requestedById) throw new Error(`Unknown seed requester: ${seed.requestedBy}`);
+    const requestedAt = daysAgo(seed.requestedDaysAgo);
+
+    let state: RefundState = {
+      status: "pending",
+      firstApproverId: null,
+      secondApproverId: null,
+      decidedAt: null,
+    };
+    const snapshot = (s: RefundState) => ({
+      id: seed.id,
+      customerName: seed.customerName,
+      customerEmail: seed.customerEmail,
+      orderRef: seed.orderRef,
+      amount: seed.amount,
+      currency: seed.currency,
+      reason: seed.reason,
+      requestedById,
+      requestedAt: requestedAt.toISOString(),
+      ...s,
+    });
+
+    const auditRows: Prisma.AuditLogCreateManyInput[] = [];
+    for (const event of seed.events) {
+      const actorId = userIds.get(event.actor);
+      if (!actorId) throw new Error(`Unknown seed actor: ${event.actor}`);
+      const at = new Date(requestedAt.getTime() + event.daysAfter * 24 * 60 * 60 * 1000);
+      const before = snapshot(state);
+      if (event.kind === "reject") {
+        state = { ...state, status: "rejected", decidedAt: at.toISOString() };
+      } else if (state.status === "pending") {
+        state =
+          Number(seed.amount) <= SINGLE_APPROVAL_LIMIT
+            ? { ...state, status: "approved", firstApproverId: actorId, decidedAt: at.toISOString() }
+            : { ...state, status: "awaiting_second_approval", firstApproverId: actorId };
+      } else {
+        state = { ...state, status: "approved", secondApproverId: actorId, decidedAt: at.toISOString() };
+      }
+      auditRows.push({
+        actorId,
+        actorEmail: event.actor,
+        action: `refunds.${event.kind}`,
+        entityType: "refundRequest",
+        entityId: seed.id,
+        before,
+        after: snapshot(state),
+        reason: event.reason,
+        createdAt: at,
+      });
+    }
+
+    await prisma.refundRequest.create({
+      data: {
+        id: seed.id,
+        customerName: seed.customerName,
+        customerEmail: seed.customerEmail,
+        orderRef: seed.orderRef,
+        amount: new Prisma.Decimal(seed.amount),
+        currency: seed.currency,
+        reason: seed.reason,
+        status: state.status,
+        requestedById,
+        requestedAt,
+        firstApproverId: state.firstApproverId,
+        secondApproverId: state.secondApproverId,
+        decidedAt: state.decidedAt ? new Date(state.decidedAt) : null,
+      },
+    });
+    if (auditRows.length > 0) {
+      await prisma.auditLog.createMany({ data: auditRows });
+    }
+    console.log(`Seeded refund request ${seed.id} (${state.status})`);
+  }
+}
+
 type CaseState = {
   id: string;
   applicantName: string;
@@ -360,10 +678,12 @@ async function main() {
   }
 
   await seedKycCases(userIds);
+  await seedRefundRequests(userIds);
 
   const userCount = await prisma.user.count();
   const caseCount = await prisma.kycCase.count();
-  console.log(`Seed complete: ${userCount} users, ${caseCount} KYC cases.`);
+  const refundCount = await prisma.refundRequest.count();
+  console.log(`Seed complete: ${userCount} users, ${caseCount} KYC cases, ${refundCount} refund requests.`);
 }
 
 main()

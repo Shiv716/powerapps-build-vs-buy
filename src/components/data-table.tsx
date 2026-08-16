@@ -74,8 +74,10 @@ export function DataTable({
                   <td key={col.key} className="px-4 py-3">
                     {j === 0 && rowHref ? (
                       <Link href={rowHref(row)} className="font-medium text-blue-700 hover:underline">
-                        {formatCell(cellValue(row, col.key), col.kind)}
+                        {col.render ? col.render(row) : formatCell(cellValue(row, col.key), col.kind)}
                       </Link>
+                    ) : col.render ? (
+                      col.render(row)
                     ) : (
                       formatCell(cellValue(row, col.key), col.kind)
                     )}
